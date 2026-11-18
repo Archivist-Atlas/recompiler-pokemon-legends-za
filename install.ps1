@@ -147,6 +147,10 @@ if (-not (Test-Path -LiteralPath $lasrecompExe) -or -not (Test-Path -LiteralPath
 
     Copy-Item -LiteralPath (Join-Path $buildDir "lasrecomp.exe") -Destination $lasrecompExe -Force
     Copy-Item -LiteralPath (Join-Path $buildDir "lasgame.dll") -Destination $lasgameDll -Force
+    $lasgameIdSrc = Join-Path $buildDir "lasgame.dll.id"
+    if (Test-Path -LiteralPath $lasgameIdSrc) {
+        Copy-Item -LiteralPath $lasgameIdSrc -Destination "$lasgameDll.id" -Force
+    }
 
     # Copy required MSYS2 Clang64 runtime DLLs next to lasrecomp.exe (zero MSYS2 dependency at runtime)
     $exeFwd = $lasrecompExe -replace "\\", "/"
