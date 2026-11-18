@@ -2636,7 +2636,7 @@ void ui_window_init(void) {
         if (dx12_chosen) { g_settings.dx12 = false; settings_save(); g_settings.dx12 = true; }
     }
 #endif
-    window = SDL_CreateWindow("ZA Recomp", win_w, win_h, wflags);
+    window = SDL_CreateWindow("Pokémon Legends: Z-A (Switch recomp) - F11: fullscreen", win_w, win_h, wflags);
     if (!window) FATAL("SDL_CreateWindow: %s\n", SDL_GetError());
     rt_window_icon(window);
     if (ENV("LARECOMP_WINDOW_POS")) {  // (two games side by side: local play tests)
