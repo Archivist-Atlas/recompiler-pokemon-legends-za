@@ -37,6 +37,9 @@
 #define _countof(a) (sizeof(a) / sizeof((a)[0]))
 #define wcscpy_s(dst, src) wcscpy(dst, src)
 #endif
+#ifndef _countof
+#define _countof(a) (sizeof(a) / sizeof((a)[0]))
+#endif
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wunused-variable"
