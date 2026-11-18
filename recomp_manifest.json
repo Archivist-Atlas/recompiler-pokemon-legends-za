@@ -1,0 +1,19 @@
+{
+  "id": "pokemon-legends-za",
+  "name": "Pokémon Legends: Z-A",
+  "recompiler_name": "PokeZ-ARecomp (LASRecomp)",
+  "title_ids": [
+    "0100F43008C44000",
+    "0100F43008C44800"
+  ],
+  "supported_versions": [
+    0,
+    393216
+  ],
+  "default_output_subdir": "Pokemon Legends Z-A",
+  "shortcut_name": "Pokemon Legends Z-A",
+  "windows_entrypoint": "install.ps1",
+  "script": "install.ps1",
+  "icon": "game_icon.ico",
+  "description": "Recompile Pokémon Legends: Z-A (Nintendo Switch 2 depuis votre .nup) en exécutable Windows PC natif (SDL3 / Vulkan, mode fenêtré 720p par défaut, plein écran via F11, Échap pour quitter)."
+}
