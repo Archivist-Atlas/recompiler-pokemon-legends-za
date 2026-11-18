@@ -141,7 +141,7 @@ if (-not (Test-Path -LiteralPath $lasrecompExe) -or -not (Test-Path -LiteralPath
     $genFwd = $genDir -replace "\\", "/"
     $buildFwd = $buildDir -replace "\\", "/"
     $srcFwd = $source -replace "\\", "/"
-    $makeCmd = "cd '$srcFwd' && rm -f '$buildFwd/obj/tools/gamelib_entry.o' '$buildFwd/rt/gamelib.o' '$buildFwd/rt/gamebuild.o' && make -j$jobs GEN='$genFwd' B='$buildFwd' GENARCH=-march=x86-64-v3 GENOPT=-O0 RELEASE=1"
+    $makeCmd = "export PATH='/clang64/bin:/usr/bin' && cd '$srcFwd' && rm -f '$buildFwd/obj/tools/gamelib_entry.o' '$buildFwd/rt/gamelib.o' '$buildFwd/rt/gamebuild.o' && make -j$jobs GEN='$genFwd' B='$buildFwd' GENARCH=-march=x86-64-v3 GENOPT=-O0 RELEASE=1"
     & $bashExe -lc $makeCmd
     if ($LASTEXITCODE -ne 0) { Say "make build failed"; exit 1 }
 
