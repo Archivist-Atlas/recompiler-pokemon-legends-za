@@ -218,20 +218,23 @@ if (Test-Path -LiteralPath $pngSrc) {
 
 $runner = Join-Path $Dir "za.cmd"
 if ($isLauncherExe -and (Test-Path -LiteralPath $launcherUiDst) -and (Test-Path -LiteralPath $launchConfigPath)) {
-@"
+    $cmdText = @"
 @echo off
-cd /d "$Dir"
-"$launcherUiDst" --config "$launchConfigPath" %*
-"@ | Set-Content -Encoding ASCII $runner
+chcp 65001 >nul
+cd /d "%~dp0"
+"%~dp0game_launcher.exe" --config "%~dp0launch_options.json" %*
+"@
 } else {
-@"
+    $cmdText = @"
 @echo off
-cd /d "$Dir"
+chcp 65001 >nul
+cd /d "%~dp0"
 set "LARECOMP_SAVE_DIR=$globalSaveDir"
 set "LARECOMP_WINDOW=1280x720"
-"$lasrecompExe" --play %*
-"@ | Set-Content -Encoding ASCII $runner
+"%~dp0lasrecomp.exe" --play %*
+"@
 }
+[System.IO.File]::WriteAllText($runner, $cmdText, $utf8NoBom)
 
 $safeShortcutName = ($ShortcutName -replace '[<>:"/\\|?*]+', ' -').Trim()
 if (-not $safeShortcutName) { $safeShortcutName = "Pokemon Legends Z-A" }
