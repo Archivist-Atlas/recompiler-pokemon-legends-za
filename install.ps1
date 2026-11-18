@@ -108,7 +108,11 @@ if (-not (Test-Path -LiteralPath (Join-Path $exefsDir "main")) -or -not (Test-Pa
 }
 
 # ---- 2. Lift ARM64 ExeFS (sdk, main) to C using standalone lasgen.exe ----
-$workRoot = Join-Path $Dir "_work"
+# GNU Make cannot handle spaces or accents in GEN/B paths: keep workRoot ASCII & space-free.
+$workRoot = Join-Path $parentInstallDir "_pokeza_work"
+if ($workRoot -match '[\s\x80-\xFF]') {
+    $workRoot = Join-Path $env:TEMP "pokeza_work"
+}
 $genDir = Join-Path $workRoot "generated"
 New-Item -ItemType Directory -Force -Path $genDir | Out-Null
 
