@@ -150,14 +150,12 @@ if (-not (Test-Path -LiteralPath $lasrecompExe) -or -not (Test-Path -LiteralPath
 
     # Copy required MSYS2 Clang64 runtime DLLs next to lasrecomp.exe (zero MSYS2 dependency at runtime)
     $exeFwd = $lasrecompExe -replace "\\", "/"
-    $dllList = & $bashExe -lc "PATH='/clang64/bin:/usr/bin' ldd '$exeFwd' | awk '/\/clang64\// && !/vulkan-1/ {print `$3}'"
-    foreach ($dllPosix in $dllList) {
-        $dllPosix = $dllPosix.Trim()
-        if ($dllPosix) {
-            $dllWin = & $bashExe -lc "cygpath -w '$dllPosix'"
-            if ($dllWin -and (Test-Path -LiteralPath $dllWin.Trim())) {
-                Copy-Item -LiteralPath $dllWin.Trim() -Destination $Dir -Force
-            }
+    $gameFwd = (Join-Path $Dir "lasgame.dll") -replace "\\", "/"
+    $dllList = & $bashExe -lc "PATH='/clang64/bin:/usr/bin' ldd '$exeFwd' '$gameFwd' 2>/dev/null | awk '/\/clang64\// && !/vulkan-1/ {print `$3}' | sort -u | xargs -r cygpath -w"
+    foreach ($dllWin in $dllList) {
+        $dllWin = $dllWin.Trim()
+        if ($dllWin -and (Test-Path -LiteralPath $dllWin)) {
+            Copy-Item -LiteralPath $dllWin -Destination $Dir -Force
         }
     }
 }
