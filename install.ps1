@@ -1,4 +1,4 @@
-﻿# Pokémon Legends: Z-A (PokeZ-ARecomp) installer for Windows (driven by NUP Studio)
+# Pokémon Legends: Z-A (PokeZ-ARecomp) installer for Windows (driven by NUP Studio)
 param(
     [string]$Nup = "",
     [string]$Dir = "",
