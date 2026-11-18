@@ -153,15 +153,91 @@ if (-not (Test-Path -LiteralPath $lasrecompExe) -or -not (Test-Path -LiteralPath
     }
 
     # Copy required MSYS2 Clang64 runtime DLLs next to lasrecomp.exe (zero MSYS2 dependency at runtime)
-    $exeFwd = $lasrecompExe -replace "\\", "/"
-    $gameFwd = (Join-Path $Dir "lasgame.dll") -replace "\\", "/"
-    $dllList = & $bashExe -lc "PATH='/clang64/bin:/usr/bin' ldd '$exeFwd' '$gameFwd' 2>/dev/null | awk '/\/clang64\// && !/vulkan-1/ {print `$3}' | sort -u | xargs -r cygpath -w"
-    foreach ($dllWin in $dllList) {
-        $dllWin = $dllWin.Trim()
-        if ($dllWin -and (Test-Path -LiteralPath $dllWin)) {
-            Copy-Item -LiteralPath $dllWin -Destination $Dir -Force
-        }
-    }
+    # Static PE import-table BFS (both normal & delay imports) avoids ldd misses on deep transitive DLLs like libffi-8.dll.
+    $dllCopyPy = Join-Path $workRoot "copy_clang64_dlls.py"
+    $pyCode = @'
+import os, shutil, struct, sys
+
+def pe_imports(path):
+    with open(path, 'rb') as f:
+        data = f.read(4096)
+        if data[:2] != b'MZ': return []
+        pe_off = struct.unpack_from('<I', data, 0x3c)[0]
+        f.seek(pe_off)
+        hdr = f.read(256)
+        if hdr[:4] != b'PE\0\0': return []
+        n_sec, = struct.unpack_from('<H', hdr, 6)
+        opt_sz, = struct.unpack_from('<H', hdr, 20)
+        opt_off = pe_off + 24
+        f.seek(opt_off)
+        opt = f.read(opt_sz)
+        magic, = struct.unpack_from('<H', opt, 0)
+        dd_off = 112 if magic == 0x20b else 96
+        n_dd, = struct.unpack_from('<I', opt, dd_off - 4)
+        f.seek(opt_off + opt_sz)
+        secs = []
+        for _ in range(n_sec):
+            s = f.read(40)
+            vsz, va, rsz, rptr = struct.unpack_from('<4I', s, 8)
+            secs.append((va, max(vsz, rsz), rptr))
+        def r2o(rva):
+            for va, sz, rp in secs:
+                if va <= rva < va + sz:
+                    return rp + (rva - va)
+            return None
+        def read_cstr(off):
+            if off is None: return ''
+            f.seek(off)
+            buf = f.read(260)
+            end = buf.find(b'\0')
+            return (buf[:end] if end != -1 else buf).decode('ascii', 'ignore')
+        out = []
+        if n_dd > 1:
+            imp_rva, _ = struct.unpack_from('<2I', opt, dd_off + 8)
+            if imp_rva:
+                off = r2o(imp_rva)
+                while off is not None:
+                    f.seek(off)
+                    desc = f.read(20)
+                    if len(desc) < 20 or desc == b'\0' * 20: break
+                    name_rva, = struct.unpack_from('<I', desc, 12)
+                    if not name_rva: break
+                    n = read_cstr(r2o(name_rva))
+                    if n: out.append(n)
+                    off += 20
+        if n_dd > 13:
+            dly_rva, _ = struct.unpack_from('<2I', opt, dd_off + 13 * 8)
+            if dly_rva:
+                off = r2o(dly_rva)
+                while off is not None:
+                    f.seek(off)
+                    desc = f.read(32)
+                    if len(desc) < 32 or desc == b'\0' * 32: break
+                    attrs, name_rva = struct.unpack_from('<2I', desc, 0)
+                    if not name_rva: break
+                    if attrs & 1:
+                        n = read_cstr(r2o(name_rva))
+                        if n: out.append(n)
+                    off += 32
+        return out
+
+clang_bin, dst_dir, *roots = sys.argv[1:]
+avail = {n.lower(): os.path.join(clang_bin, n) for n in os.listdir(clang_bin) if n.lower().endswith('.dll') and n.lower() != 'vulkan-1.dll'}
+seen, queue = set(), list(roots)
+while queue:
+    cur = queue.pop(0)
+    if not os.path.isfile(cur): continue
+    for imp in pe_imports(cur):
+        key = imp.lower()
+        if key in avail and key not in seen:
+            seen.add(key)
+            src = avail[key]
+            shutil.copy2(src, os.path.join(dst_dir, os.path.basename(src)))
+            queue.append(src)
+'@
+    [System.IO.File]::WriteAllText($dllCopyPy, $pyCode, (New-Object System.Text.UTF8Encoding($false)))
+    & $pyExe $dllCopyPy $clang64Bin $Dir $lasrecompExe $lasgameDll
+    if ($LASTEXITCODE -ne 0) { Say "failed to copy runtime DLLs"; exit 1 }
 }
 
 # Copy fonts and icon.png next to lasrecomp.exe
