@@ -1,4 +1,4 @@
-# Pokémon Legends: Z-A (PokeZ-ARecomp) installer for Windows (driven by NUP Studio)
+﻿# Pokémon Legends: Z-A (PokeZ-ARecomp) installer for Windows (driven by NUP Studio)
 param(
     [string]$Nup = "",
     [string]$Dir = "",
@@ -270,6 +270,7 @@ $tplPath = Join-Path $source "launch_options_template.json"
 if (Test-Path -LiteralPath $tplPath) {
     $tpl = Get-Content -LiteralPath $tplPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $tpl | Add-Member -NotePropertyName "working_dir" -NotePropertyValue $Dir -Force
+    $tpl | Add-Member -NotePropertyName "rom_path" -NotePropertyValue $Nup -Force
     $tpl | Add-Member -NotePropertyName "command" -NotePropertyValue @($lasrecompExe, "--play") -Force
     if (-not $tpl.env) {
         $tpl | Add-Member -NotePropertyName "env" -NotePropertyValue ([pscustomobject]@{}) -Force
