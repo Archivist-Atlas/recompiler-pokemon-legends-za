@@ -43,5 +43,9 @@
   ],
   "env": {
     "LARECOMP_WINDOW": "1280x720"
-  }
+  },
+  "expected_title_ids": [
+    "0100F43008C44000",
+    "0100F43008C44800"
+  ]
 }
