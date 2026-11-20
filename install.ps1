@@ -102,9 +102,23 @@ $extractedDir = Join-Path $Dir "extracted"
 $exefsDir = Join-Path $extractedDir "exefs"
 $romfsDir = Join-Path $extractedDir "romfs"
 if (-not (Test-Path -LiteralPath (Join-Path $exefsDir "main")) -or -not (Test-Path -LiteralPath $romfsDir)) {
-    Say "extracting ExeFS and RomFS from .nup..."
-    & $pyExe (Join-Path $source "tools\extract_nup.py") $Nup --select latest --out $extractedDir
-    if ($LASTEXITCODE -ne 0) { Say "extract_nup.py failed"; exit 1 }
+    if (Test-Path -LiteralPath $Nup -PathType Container) {
+        $srcExefs = if (Test-Path -LiteralPath (Join-Path $Nup "exefs\main")) { Join-Path $Nup "exefs" } else { $Nup }
+        $srcRomfs = Join-Path $Nup "romfs"
+        if (-not (Test-Path -LiteralPath (Join-Path $srcExefs "main")) -or -not (Test-Path -LiteralPath $srcRomfs)) {
+            Say "error: folder must contain exefs/main and romfs/: $Nup"; exit 1
+        }
+        Say "copying ExeFS and RomFS from folder..."
+        New-Item -ItemType Directory -Force -Path $extractedDir | Out-Null
+        if (Test-Path -LiteralPath $exefsDir) { Remove-Item -Recurse -Force $exefsDir }
+        if (Test-Path -LiteralPath $romfsDir) { Remove-Item -Recurse -Force $romfsDir }
+        Copy-Item -LiteralPath $srcExefs -Destination $exefsDir -Recurse -Force
+        Copy-Item -LiteralPath $srcRomfs -Destination $romfsDir -Recurse -Force
+    } else {
+        Say "extracting ExeFS and RomFS from .nup..."
+        & $pyExe (Join-Path $source "tools\extract_nup.py") $Nup --select latest --out $extractedDir
+        if ($LASTEXITCODE -ne 0) { Say "extract_nup.py failed"; exit 1 }
+    }
 }
 
 # ---- 2. Lift ARM64 ExeFS (sdk, main) to C using standalone lasgen.exe ----
